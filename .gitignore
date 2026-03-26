@@ -1,0 +1,88 @@
+**/target/**
+*.class
+*.iml
+.DS_Store
+*.log
+**/core$
+hs_err_pid*
+*.cache
+*.war
+*.ear
+.clangd
+.java-version
+
+# IDEA config
+.idea/
+!.idea/vcs.xml
+# vscode config
+.vscode
+# vscode scala
+.bloop
+.metals
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+thirdparty/*.tar*
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+cmake_install.cmake
+build/
+!build/mvn
+!build/mvnd
+*-build/
+Testing/
+cmake-build-*/
+ep/_ep/
+**/dependency-reduced-pom.xml
+
+# Editor temporary/working/backup files
+.#*
+*\#*\#
+[#]*#
+*~
+*$
+*.bak
+*flymake*
+*.kdev4
+*.swp
+scalastyle-output.xml
+
+# Generated C++ benchmark data
+backends-velox/generated-native-benchmark/
+backends-velox/spark-warehouse/
+# Generated C++ benchmark executables
+cpp/**/benchmarks/**/*
+!cpp/**/benchmarks/**/
+!cpp/**/benchmarks/**/*.*
+# Generated C++ example executables
+cpp/**/example/**/*
+!cpp/**/example/**/
+!cpp/**/example/**/*.*
+
+/cpp-ch/ClickHouse
+/cpp-ch/cmake-build-*
+/cpp-ch/local-engine/tests/testConfig.h
+/cpp-ch/build_ch
+dist/
+/cpp-ch/local-engine/Parser/*_udf
+!/cpp-ch/local-engine/Parser/example_udf
+
+# Hive metastore
+metastore_db/
+
+.ipynb_checkpoints
+.worktrees/
+
+# GitHub Copilot config (allow local customization)
+.github/copilot-instructions.md
+.github/copilot-setup-steps.yml
+
+# Dev script build cache
+.run-scala-test-cache/
+
+# Maven profiler reports
+.profiler/
+
+# Maven extensions (local config)
+.mvn/

@@ -1,0 +1,14 @@
+{
+  global:
+    extern "C++" {
+        *gluten::*;
+        *facebook::velox::*;
+    };
+
+    Java_org_apache_gluten_*;
+    JNI_OnLoad;
+    JNI_OnUnload;
+  local:
+    # Hide all other symbols except the above global symbols.
+    *;
+};

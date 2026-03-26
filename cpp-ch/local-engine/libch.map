@@ -1,0 +1,27 @@
+{
+    global:
+      Java_org_apache_gluten*;
+      Java_org_apache_spark*;
+      JNI_OnLoad;
+      aligned_alloc;
+      calloc;
+      dallocx;
+      free;
+      mallctl;
+      mallctlbymib;
+      mallctlnametomib;
+      malloc;
+      malloc_stats_print;
+      malloc_usable_size;
+      mallocx;
+      memalign;
+      nallocx;
+      posix_memalign;
+      rallocx;
+      realloc;
+      sallocx;
+      sdallocx;
+      valloc;
+      xallocx;
+    local: *;
+};
