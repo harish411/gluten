@@ -27,7 +27,7 @@ CMakeFiles/
 CMakeCache.txt
 CTestTestfile.cmake
 cmake_install.cmake
-build/
+ep/build-velox/build/
 !build/mvn
 !build/mvnd
 *-build/
