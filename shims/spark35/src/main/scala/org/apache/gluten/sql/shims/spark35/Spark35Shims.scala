@@ -508,28 +508,47 @@ class Spark35Shims extends SparkShims {
     Seq(expr.srcArrayExpr, expr.posExpr, expr.itemExpr, Literal(expr.legacyNegativeIndex))
   }
 
-  override def withOperatorIdMap[T](idMap: java.util.Map[QueryPlan[_], Int])(body: => T): T = {
-    val prevIdMap = QueryPlan.localIdMap.get()
+  // QueryPlan.localIdMap is inaccessible as a direct member in some Spark 3.5.x builds
+  // (visibility was tightened between patch releases). Access it via reflection, falling
+  // back to a standalone ThreadLocal when the field is genuinely absent.
+  private val localIdMapRef: java.lang.ThreadLocal[java.util.Map[QueryPlan[_], Int]] = {
     try {
-      QueryPlan.localIdMap.set(idMap)
+      val field = QueryPlan.getClass.getDeclaredField("localIdMap")
+      field.setAccessible(true)
+      field
+        .get(QueryPlan)
+        .asInstanceOf[java.lang.ThreadLocal[java.util.Map[QueryPlan[_], Int]]]
+    } catch {
+      case _: NoSuchFieldException =>
+        new java.lang.ThreadLocal[java.util.Map[QueryPlan[_], Int]] {
+          override def initialValue(): java.util.Map[QueryPlan[_], Int] =
+            new java.util.IdentityHashMap[QueryPlan[_], Int]()
+        }
+    }
+  }
+
+  override def withOperatorIdMap[T](idMap: java.util.Map[QueryPlan[_], Int])(body: => T): T = {
+    val prevIdMap = localIdMapRef.get()
+    try {
+      localIdMapRef.set(idMap)
       body
     } finally {
-      QueryPlan.localIdMap.set(prevIdMap)
+      localIdMapRef.set(prevIdMap)
     }
   }
 
   override def getOperatorId(plan: QueryPlan[_]): Option[Int] = {
-    Option(QueryPlan.localIdMap.get().get(plan))
+    Option(localIdMapRef.get().get(plan))
   }
 
   override def setOperatorId(plan: QueryPlan[_], opId: Int): Unit = {
-    val map = QueryPlan.localIdMap.get()
+    val map = localIdMapRef.get()
     assert(!map.containsKey(plan))
     map.put(plan, opId)
   }
 
   override def unsetOperatorId(plan: QueryPlan[_]): Unit = {
-    QueryPlan.localIdMap.get().remove(plan)
+    localIdMapRef.get().remove(plan)
   }
 
   override def isParquetFileEncrypted(footer: ParquetMetadata): Boolean = {
