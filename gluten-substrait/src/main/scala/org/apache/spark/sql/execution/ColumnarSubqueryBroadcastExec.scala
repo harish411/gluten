@@ -130,6 +130,10 @@ case class ColumnarSubqueryBroadcastExec(
     relationFuture
   }
 
+  override def materialize(): Future[Any] = relationFuture.asInstanceOf[Future[Any]]
+
+  override def cancel(): Unit = {} // cancellation not supported for columnar broadcast subquery
+
   override def batchType(): Convention.BatchType = BackendsApiManager.getSettings.primaryBatchType
 
   override def rowType(): Convention.RowType = Convention.RowType.None

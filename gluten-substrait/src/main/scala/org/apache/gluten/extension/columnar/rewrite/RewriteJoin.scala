@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide
 import org.apache.spark.sql.catalyst.plans.logical.Join
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.joins.{ShuffledHashJoinExec, SortMergeJoinExec}
+import org.apache.spark.sql.internal.SQLConf
 
 /** If force ShuffledHashJoin, convert [[SortMergeJoinExec]] to [[ShuffledHashJoinExec]]. */
 object RewriteJoin extends RewriteSingleNode with JoinSelectionHelper {
@@ -34,8 +35,8 @@ object RewriteJoin extends RewriteSingleNode with JoinSelectionHelper {
   }
 
   private def getSmjBuildSide(join: SortMergeJoinExec): Option[BuildSide] = {
-    val leftBuildable = canBuildShuffledHashJoinLeft(join.joinType)
-    val rightBuildable = canBuildShuffledHashJoinRight(join.joinType)
+    val leftBuildable = canBuildShuffledHashJoinLeft(join.joinType, SQLConf.get)
+    val rightBuildable = canBuildShuffledHashJoinRight(join.joinType, SQLConf.get)
     if (!leftBuildable && !rightBuildable) {
       return None
     }

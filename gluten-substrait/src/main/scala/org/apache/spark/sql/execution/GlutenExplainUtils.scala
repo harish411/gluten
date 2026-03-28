@@ -104,7 +104,7 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
         case _: ReusedExchangeExec =>
         case _: NoopLeaf =>
         case w: WriteFilesExec if w.child.isInstanceOf[NoopLeaf] =>
-        case sub: AdaptiveSparkPlanExec if sub.isSubquery => collect(sub.executedPlan)
+        case sub: AdaptiveSparkPlanExec if !sub.isMainQuery => collect(sub.executedPlan)
         case _: AdaptiveSparkPlanExec =>
         case p: QueryStageExec => collect(p.plan)
         case p: GlutenPlan =>

@@ -82,13 +82,7 @@ object GlutenWriterColumnarRules {
         command.withNewChildren(
           Array(
             BackendsApiManager.getSparkPlanExecApiInstance.genColumnarToCarrierRow(
-              AdaptiveSparkPlanExec(
-                aqe.inputPlan,
-                aqe.context,
-                aqe.preprocessingRules,
-                aqe.isSubquery,
-                supportsColumnar = true
-              ))))
+              aqe.copy(supportsColumnar = true))))
       case other =>
         command.withNewChildren(
           Array(BackendsApiManager.getSparkPlanExecApiInstance.genColumnarToCarrierRow(other)))

@@ -73,7 +73,8 @@ case class MergeTwoPhasesHashBaseAggregate(session: SparkSession)
               aggregateAttributes,
               _,
               resultExpressions,
-              child: HashAggregateExec) if !isStreaming && isPartialAgg(child, hashAgg) =>
+              child: HashAggregateExec,
+              _) if !isStreaming && isPartialAgg(child, hashAgg) =>
           // convert to complete mode aggregate expressions
           val completeAggregateExpressions = aggregateExpressions.map(_.copy(mode = Complete))
           hashAgg.copy(
