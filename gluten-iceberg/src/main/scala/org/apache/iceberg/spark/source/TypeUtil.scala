@@ -56,4 +56,22 @@ object TypeUtil {
         partitionValue.toString
     }
   }
+
+  // Reflection-based variant for the classloader-isolated path where partitionType is
+  // an AnyRef from a different classloader (not castable to org.apache.iceberg.types.Type).
+  def getPartitionValueStringReflective(partitionType: AnyRef, partitionValue: Any): String = {
+    val typeId = partitionType.getClass.getMethod("typeId").invoke(partitionType)
+    typeId.toString match {
+      case "BINARY" =>
+        new String(partitionValue.asInstanceOf[ByteBuffer].array(), StandardCharsets.UTF_8)
+      case "DATE" =>
+        DateFormatter.apply().format(partitionValue.asInstanceOf[Integer])
+      case "TIMESTAMP" | "TIME" =>
+        TimestampFormatter
+          .getFractionFormatter(ZoneOffset.UTC)
+          .format(partitionValue.asInstanceOf[JLong])
+      case _ =>
+        partitionValue.toString
+    }
+  }
 }

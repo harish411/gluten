@@ -325,7 +325,12 @@ object IcebergScanTransformer {
   }
 
   def supportsBatchScan(scan: Scan): Boolean = {
-    scan.getClass == GlutenIcebergSourceUtil.getClassOfSparkBatchQueryScan
+    // Compare by class name to handle classloader isolation when multiple Iceberg
+    // runtime jars are on the classpath (e.g., iceberg-spark-runtime-3.5_2.12-1.4.2-amzn-0.jar
+    // AND iceberg-spark3-runtime.jar on EMR both contain SparkBatchQueryScan, causing
+    // class identity mismatch that breaks == and isAssignableFrom).
+    scan.getClass.getName ==
+      GlutenIcebergSourceUtil.getClassOfSparkBatchQueryScan.getName
   }
 
   private def containsUuidOrFixedType(dataType: Type): Boolean = {

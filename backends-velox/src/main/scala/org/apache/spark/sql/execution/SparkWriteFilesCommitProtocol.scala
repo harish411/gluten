@@ -35,16 +35,20 @@ import java.util.UUID
 import scala.collection.mutable
 
 /**
- * A wrapper for [[HadoopMapReduceCommitProtocol]]. This class only affects the task side commit
- * process. e.g., `setupTask`, `newTaskAttemptTempPath`, `commitTask`, `abortTask`. The job commit
- * process is at vanilla Spark driver side.
+ * A wrapper for [[FileCommitProtocol]]. This class only affects the task side commit process. e.g.,
+ * `setupTask`, `newTaskAttemptTempPath`, `commitTask`, `abortTask`. The job commit process is at
+ * vanilla Spark driver side.
+ *
+ * When the committer is a [[HadoopMapReduceCommitProtocol]], the staging write path is resolved via
+ * its internal [[org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter]] work path. For other
+ * committers (e.g., EMR S3 / EMRFS committers), the target path from the job description is used
+ * directly and the committer manages staging internally.
  */
 class SparkWriteFilesCommitProtocol(
     jobTrackerID: String,
     description: WriteJobDescription,
     committer: FileCommitProtocol)
   extends Logging {
-  assert(committer.isInstanceOf[HadoopMapReduceCommitProtocol])
 
   val sparkStageId: Int = TaskContext.get().stageId()
   val sparkPartitionId: Int = TaskContext.get().partitionId()
@@ -69,10 +73,18 @@ class SparkWriteFilesCommitProtocol(
     new TaskAttemptContextImpl(hadoopConf, taskAttemptId)
   }
 
-  private lazy val internalCommitter: OutputCommitter = {
-    val field: Field = classOf[HadoopMapReduceCommitProtocol].getDeclaredField("committer")
-    field.setAccessible(true)
-    field.get(committer).asInstanceOf[OutputCommitter]
+  // Only HadoopMapReduceCommitProtocol exposes an internal OutputCommitter via reflection.
+  // Other committers (e.g., EMR S3 committers) manage staging entirely on their own.
+  private lazy val internalCommitter: Option[OutputCommitter] = committer match {
+    case _: HadoopMapReduceCommitProtocol =>
+      val field: Field = classOf[HadoopMapReduceCommitProtocol].getDeclaredField("committer")
+      field.setAccessible(true)
+      Some(field.get(committer).asInstanceOf[OutputCommitter])
+    case _ =>
+      logInfo(
+        s"Committer ${committer.getClass.getName} is not a HadoopMapReduceCommitProtocol; " +
+          "staging path will use the job description output path directly.")
+      None
   }
 
   def setupTask(): Unit = {
@@ -96,12 +108,13 @@ class SparkWriteFilesCommitProtocol(
   }
 
   def newTaskAttemptTempPath(): String = {
-    assert(internalCommitter != null)
     val stagingDir: Path = internalCommitter match {
       // For FileOutputCommitter it has its own staging path called "work path".
-      case f: FileOutputCommitter =>
+      case Some(f: FileOutputCommitter) =>
         new Path(Option(f.getWorkPath).map(_.toString).getOrElse(description.path))
       case _ =>
+        // Non-Hadoop committers (e.g., EMR S3 committers) handle staging internally;
+        // write directly to the target path.
         new Path(description.path)
     }
     stagingDir.toString
